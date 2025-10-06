@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gestão Trello — Cards, Membros e Etiquetas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Gestão Trello</h1>
+      <p class="lead">Mover / Criar cards — atribuir membros e etiquetas — anexar arquivos (até 10MB)</p>
+    </header>
+
+    <form id="trelloForm" class="form">
+      <div class="row">
+        <div class="col">
+          <label for="boardSelect">Quadro (Board)</label>
+          <select id="boardSelect"></select>
+        </div>
+
+        <div class="col">
+          <label for="listSelect">Lista (List)</label>
+          <select id="listSelect"></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="cardSelect">Card (selecione para mover / editar)</label>
+          <select id="cardSelect">
+            <option value="">Criar novo card</option>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="posSelect">Posição do card</label>
+          <select id="posSelect">
+            <option value="top">Topo</option>
+            <option value="bottom">Base</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row full">
+        <label for="cardName">Nome do card</label>
+        <input id="cardName" type="text" placeholder="Título do card (se criar/editar)" />
+      </div>
+
+      <div class="row full">
+        <label for="cardDesc">Descrição</label>
+        <textarea id="cardDesc" placeholder="Descrição do card"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="due">Data de vencimento (opcional)</label>
+          <input id="due" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ" />
+        </div>
+        <div class="col">
+          <label>&nbsp;</label>
+          <div class="small-note">Selecione o quadro para carregar listas, membros e etiquetas automaticamente.</div>
+        </div>
+      </div>
+
+      <!-- Dual listbox membros -->
+      <div class="row full">
+        <label>Membros do card</label>
+        <div class="dual-listbox">
+          <div class="listbox">
+            <div class="listbox-title">Disponíveis</div>
+            <select id="membersAvailable" multiple></select>
+          </div>
+
+          <div class="listbox-controls">
+            <button type="button" id="addMember" class="small-btn">&gt;</button>
+            <button type="button" id="removeMember" class="small-btn">&lt;</button>
+            <button type="button" id="fetchMembers" class="tertiary">Recarregar membros</button>
+          </div>
+
+          <div class="listbox">
+            <div class="listbox-title">Selecionados</div>
+            <select id="membersSelected" multiple></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dual listbox labels -->
+      <div class="row full">
+        <label>Etiquetas (labels)</label>
+        <div class="dual-listbox">
+          <div class="listbox">
+            <div class="listbox-title">Disponíveis</div>
+            <select id="labelsAvailable" multiple></select>
+          </div>
+
+          <div class="listbox-controls">
+            <button type="button" id="addLabel" class="small-btn">&gt;</button>
+            <button type="button" id="removeLabel" class="small-btn">&lt;</button>
+            <button type="button" id="fetchLabels" class="tertiary">Recarregar etiquetas</button>
+          </div>
+
+          <div class="listbox">
+            <div class="listbox-title">Selecionadas</div>
+            <select id="labelsSelected" multiple></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row full">
+        <label for="attachments">Anexos (até 10MB cada)</label>
+        <input id="attachments" type="file" multiple />
+      </div>
+
+      <div class="row full actions">
+        <button type="submit" class="primary">Criar / Mover card</button>
+        <button type="button" id="resetBtn" class="secondary">Limpar</button>
+        <button type="button" id="toggleResponse" class="linkish">Mostrar/Esconder resposta API</button>
+      </div>
+
+      <pre id="response" hidden>nenhuma</pre>
+    </form>
+
+    <footer class="footer">
+      <small>Teste local — em produção não exponha chaves/token.</small>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
