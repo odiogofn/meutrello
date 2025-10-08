@@ -255,3 +255,27 @@ select:focus, input:focus, textarea:focus {
   width: 100%;
   border: 1px solid #ccc;
   border-radius:
+
+/* ==============================
+   BOTÃO FECHAR DETALHES
+============================== */
+.close-details-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: none;
+  color: #777;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-details-btn:hover {
+  color: #222;
+}
+
+.card-details {
+  position: relative;
+}
+
