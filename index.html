@@ -3,15 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Trello</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Painel Trello Minimalista</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="app-header">
     <h2>Painel Trello</h2>
     <div class="actions">
-      <select id="boardSelect"></select>
-      <select id="listSelect" disabled></select>
+      <select id="boardSelect">
+        <option value="">Selecione um quadro...</option>
+      </select>
+      <select id="listSelect" disabled>
+        <option value="">Selecione uma lista...</option>
+      </select>
       <button id="refreshCards" class="btn">🔄 Atualizar</button>
       <button id="openCreateModal" class="btn primary" disabled>➕ Novo</button>
     </div>
@@ -28,15 +32,16 @@
     </section>
   </main>
 
-  <!-- Modal: Novo Card -->
+  <!-- Modal de criação -->
   <div id="createModal" class="modal hidden">
     <div class="modal-content">
       <button id="closeCreateModal" class="icon-btn">✕</button>
       <h3>Novo Card</h3>
       <label>Nome</label>
-      <input type="text" id="newCardName" placeholder="Título do card">
+      <input type="text" id="newCardName" placeholder="Título do card" />
+
       <label>Descrição</label>
-      <textarea id="newCardDesc" rows="3" placeholder="Descrição"></textarea>
+      <textarea id="newCardDesc" rows="3" placeholder="Descrição..."></textarea>
 
       <label>Membros</label>
       <select id="newCardMembers" multiple></select>
@@ -44,15 +49,11 @@
       <label>Etiquetas</label>
       <select id="newCardLabels" multiple></select>
 
-      <div class="uploader">
-        <h4>Anexos</h4>
-        <div id="previewList" class="preview-list"></div>
-      </div>
-
       <div class="buttons">
-        <button id="createCardBtn" class="btn primary">Criar Card</button>
+        <button id="createCardBtn" class="btn primary">Criar</button>
         <button id="cancelCreate" class="btn">Cancelar</button>
       </div>
+
       <div id="createFeedback" class="feedback"></div>
     </div>
   </div>

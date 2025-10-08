@@ -1,226 +1,169 @@
-const apiKey="4ba1b3a8270aa12804e3ea96f5af088c";
-const apiToken="ATTAc15f31b2e80716400ce511dc02f27d2c5e4a5bbedc6c8e897c7e378b377A2530AE5";
+const apiKey = "4ba1b3a8270aa12804e3ea96f5af088c";
+const apiToken = "ATTAc15f31b2e807164ed11400ce511dc02f27d2c5e4a5bbedc6c8e897c7e378b377A2530AE5";
 
-const boardSelect=document.getElementById('boardSelect');
-const listSelect=document.getElementById('listSelect');
-const refreshBtn=document.getElementById('refreshCards');
-const openCreateModalBtn=document.getElementById('openCreateModal');
-const createModal=document.getElementById('createModal');
-const closeCreateModal=document.getElementById('closeCreateModal');
-const cancelCreate=document.getElementById('cancelCreate');
-const createCardBtn=document.getElementById('createCardBtn');
-const newCardName=document.getElementById('newCardName');
-const newCardDesc=document.getElementById('newCardDesc');
-const newCardMembers=document.getElementById('newCardMembers');
-const newCardLabels=document.getElementById('newCardLabels');
-const previewList=document.getElementById('previewList');
-const createFeedback=document.getElementById('createFeedback');
-const cardsListEl=document.getElementById('cardsList');
-const cardDetailsEl=document.getElementById('cardDetails');
-const searchInput=document.getElementById('searchInput');
-const searchSection=document.getElementById('searchSection');
-const cardItemTpl=document.getElementById('cardItemTpl');
-const labelPillTpl=document.getElementById('labelPillTpl');
+const boardSelect = document.getElementById('boardSelect');
+const listSelect = document.getElementById('listSelect');
+const refreshBtn = document.getElementById('refreshCards');
+const openCreateModalBtn = document.getElementById('openCreateModal');
+const cardsList = document.getElementById('cardsList');
+const cardDetails = document.getElementById('cardDetails');
+const searchInput = document.getElementById('searchInput');
+const searchSection = document.getElementById('searchSection');
 
-let boards=[],listsByBoard=new Map(),currentBoard=null,currentList=null;
-let boardMembers=[],boardLabels=[],allCards=[],attachmentsToUpload=[];
+const createModal = document.getElementById('createModal');
+const closeCreateModal = document.getElementById('closeCreateModal');
+const cancelCreate = document.getElementById('cancelCreate');
+const createCardBtn = document.getElementById('createCardBtn');
+const newCardName = document.getElementById('newCardName');
+const newCardDesc = document.getElementById('newCardDesc');
+const newCardMembers = document.getElementById('newCardMembers');
+const newCardLabels = document.getElementById('newCardLabels');
+const createFeedback = document.getElementById('createFeedback');
 
-const TRELLO=(p,params={})=>{
-  const u=new URL(`https://api.trello.com/1/${p}`);
-  u.searchParams.set('key',apiKey);
-  u.searchParams.set('token',apiToken);
-  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
-  return u.toString();
+let boards = [], lists = [], currentBoard = null, currentList = null, allCards = [];
+
+const TRELLO = (endpoint, params = {}) => {
+  const url = new URL(`https://api.trello.com/1/${endpoint}`);
+  url.searchParams.set('key', apiKey);
+  url.searchParams.set('token', apiToken);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  return url.toString();
 };
 
-const fmtDate=s=>new Date(s).toLocaleString();
-const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
-const clearChildren=e=>{while(e.firstChild)e.removeChild(e.firstChild);};
-
-/************** LOAD BOARDS/LISTS/MEMBERS/LABELS **************/
-async function loadBoards(){
-  const r=await fetch(TRELLO('members/me/boards',{filter:'open',fields:'name'}));
-  boards=await r.json();
-  boardSelect.innerHTML='<option value="">Selecione um quadro...</option>';
-  boards.forEach(b=>{
-    const o=el('option');
-    o.value=b.id;
-    o.textContent=b.name;
-    boardSelect.append(o);
+async function loadBoards() {
+  const res = await fetch(TRELLO('members/me/boards', { fields: 'name' }));
+  boards = await res.json();
+  boardSelect.innerHTML = '<option value="">Selecione um quadro...</option>';
+  boards.forEach(b => {
+    const o = document.createElement('option');
+    o.value = b.id;
+    o.textContent = b.name;
+    boardSelect.appendChild(o);
   });
 }
 
-async function loadLists(id){
-  const r=await fetch(TRELLO(`boards/${id}/lists`,{filter:'open'}));
-  const l=await r.json();
-  listsByBoard.set(id,l);
-  listSelect.innerHTML='<option value="">Selecione uma lista...</option>';
-  l.forEach(x=>{
-    const o=el('option');
-    o.value=x.id;
-    o.textContent=x.name;
-    listSelect.append(o);
+async function loadLists(boardId) {
+  const res = await fetch(TRELLO(`boards/${boardId}/lists`, { fields: 'name' }));
+  lists = await res.json();
+  listSelect.innerHTML = '<option value="">Selecione uma lista...</option>';
+  lists.forEach(l => {
+    const o = document.createElement('option');
+    o.value = l.id;
+    o.textContent = l.name;
+    listSelect.appendChild(o);
   });
-  listSelect.disabled=false;
-  openCreateModalBtn.disabled=false;
+  listSelect.disabled = false;
+  openCreateModalBtn.disabled = false;
 }
 
-async function loadBoardMembers(id){
-  const r=await fetch(TRELLO(`boards/${id}/members`,{fields:'fullName,username'}));
-  boardMembers=await r.json();
-  newCardMembers.innerHTML='';
-  boardMembers.forEach(m=>{
-    const o=el('option');
-    o.value=m.id;
-    o.textContent=`${m.fullName} (@${m.username})`;
-    newCardMembers.append(o);
-  });
-}
-
-async function loadBoardLabels(id){
-  const r=await fetch(TRELLO(`boards/${id}/labels`,{fields:'name,color'}));
-  boardLabels=await r.json();
-  newCardLabels.innerHTML='';
-  boardLabels.forEach(l=>{
-    const o=el('option');
-    o.value=l.id;
-    o.textContent=l.name||l.color;
-    newCardLabels.append(o);
-  });
-}
-
-/************** LOAD CARDS **************/
-async function loadCards(id){
-  const r=await fetch(TRELLO(`lists/${id}/cards`,{fields:'name,desc,labels,idMembers,dateLastActivity'}));
-  allCards=await r.json();
+async function loadCards(listId) {
+  const res = await fetch(TRELLO(`lists/${listId}/cards`, { fields: 'name,desc,labels,dateLastActivity' }));
+  allCards = await res.json();
   renderCards(allCards);
-  searchSection.style.display='block';
+  searchSection.style.display = 'block';
 }
 
-function renderCards(cards){
-  clearChildren(cardsListEl);
-  if(!cards.length){
-    cardsListEl.innerHTML='<p>Nenhum card encontrado.</p>';
+function renderCards(cards) {
+  cardsList.innerHTML = '';
+  if (!cards.length) {
+    cardsList.innerHTML = '<p>Nenhum card encontrado.</p>';
     return;
   }
-  cards.forEach(c=>{
-    const node=cardItemTpl.content.cloneNode(true);
-    node.querySelector('.card-title').textContent=c.name;
-    const labelList=node.querySelector('.label-list');
-    c.labels?.forEach(l=>{
-      const p=labelPillTpl.content.cloneNode(true);
-      p.querySelector('.label-pill').textContent=l.name||l.color;
-      labelList.append(p);
-    });
-    node.querySelector('.view-details').onclick=()=>showCardDetails(c.id);
-    node.querySelector('.move-card').onclick=()=>openMoveDialog(c);
-    cardsListEl.append(node);
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.innerHTML = `
+      <div class="card-title-row">
+        <h4 class="card-title">${c.name}</h4>
+        <button class="view-details btn">Detalhes</button>
+      </div>
+      <div class="label-list">
+        ${c.labels.map(l => `<span class="label-pill">${l.name || l.color}</span>`).join('')}
+      </div>`;
+    div.querySelector('.view-details').onclick = () => showCardDetails(c.id);
+    cardsList.appendChild(div);
   });
 }
 
-/************** SEARCH **************/
-searchInput.oninput=()=>{
-  const q=searchInput.value.toLowerCase();
-  if(!q)return renderCards(allCards);
-  const f=allCards.filter(c=>{
-    const inN=c.name?.toLowerCase().includes(q);
-    const inD=c.desc?.toLowerCase().includes(q);
-    const inL=c.labels?.some(l=>(l.name||l.color).toLowerCase().includes(q));
-    const inM=c.idMembers?.some(id=>{
-      const m=boardMembers.find(mm=>mm.id===id);
-      return m&&(m.fullName.toLowerCase().includes(q)||m.username.toLowerCase().includes(q));
-    });
-    return inN||inD||inL||inM;
-  });
-  renderCards(f);
-};
+async function showCardDetails(cardId) {
+  const res = await fetch(TRELLO(`cards/${cardId}`, { fields: 'name,desc,labels,shortUrl,dateLastActivity' }));
+  const c = await res.json();
+  cardDetails.classList.remove('hidden');
+  cardDetails.innerHTML = `
+    <h3>${c.name}</h3>
+    <p><b>Última atividade:</b> ${new Date(c.dateLastActivity).toLocaleString()}</p>
+    <p>${c.desc || 'Sem descrição'}</p>
+    <h4>Etiquetas:</h4>
+    ${c.labels.map(l => `<span class="label-pill">${l.name || l.color}</span>`).join('') || '—'}
+    <p><a href="${c.shortUrl}" target="_blank">Abrir no Trello</a></p>
+  `;
+}
 
-/************** CREATE MODAL **************/
-function openCreateModal(){
+/* Busca */
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase();
+  if (!q) return renderCards(allCards);
+  const filtered = allCards.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.desc.toLowerCase().includes(q)
+  );
+  renderCards(filtered);
+});
+
+/* Modal */
+function openCreateModal() {
   createModal.classList.remove('hidden');
-  createFeedback.textContent='';
-  newCardName.value='';
-  newCardDesc.value='';
-  attachmentsToUpload=[];
-  previewList.innerHTML='';
-  loadBoardLabels(currentBoard.id);
+  createFeedback.textContent = '';
+  newCardName.value = '';
+  newCardDesc.value = '';
 }
 
-function closeCreate(){
+function closeCreate() {
   createModal.classList.add('hidden');
-  newCardName.value='';
-  newCardDesc.value='';
-  attachmentsToUpload=[];
-  previewList.innerHTML='';
-  createFeedback.textContent='';
 }
 
-openCreateModalBtn.addEventListener('click', openCreateModal);
-closeCreateModal.addEventListener('click', e=>{
-  e.preventDefault();
-  closeCreate();
-});
-cancelCreate.addEventListener('click', e=>{
-  e.preventDefault();
-  closeCreate();
-});
+openCreateModalBtn.onclick = openCreateModal;
+closeCreateModal.onclick = closeCreate;
+cancelCreate.onclick = closeCreate;
 
-/************** CREATE CARD **************/
-async function createCard(e){
-  e.preventDefault();
-  const name=newCardName.value.trim();
-  const desc=newCardDesc.value.trim();
-  const idMembers=Array.from(newCardMembers.selectedOptions).map(o=>o.value);
-  const idLabels=Array.from(newCardLabels.selectedOptions).map(o=>o.value);
-
-  if(!name){
-    createFeedback.textContent='⚠️ Informe o nome do card.';
+createCardBtn.onclick = async () => {
+  const name = newCardName.value.trim();
+  if (!name) {
+    createFeedback.textContent = '⚠️ Digite um nome para o card.';
     createFeedback.classList.add('error');
     return;
   }
-
-  const r=await fetch(TRELLO('cards',{
-    idList:currentList.id,
-    name,
-    desc,
-    idMembers:idMembers.join(','),
-    idLabels:idLabels.join(',')
-  }),{method:'POST'});
-
-  const card=await r.json();
-  if(!r.ok){
-    createFeedback.textContent='❌ Erro ao criar card.';
+  const desc = newCardDesc.value.trim();
+  const res = await fetch(TRELLO('cards', { idList: currentList.id, name, desc }), { method: 'POST' });
+  if (!res.ok) {
+    createFeedback.textContent = '❌ Erro ao criar card.';
     return;
   }
+  createFeedback.textContent = '✅ Card criado!';
+  setTimeout(() => {
+    closeCreate();
+    loadCards(currentList.id);
+  }, 1000);
+};
 
-  createFeedback.innerHTML=`✅ Card criado! <a href="${card.shortUrl}" target="_blank">Abrir</a>`;
-  createFeedback.classList.add('success');
-  setTimeout(()=>{closeCreate();loadCards(currentList.id);},1200);
-}
-
-createCardBtn.addEventListener('click', createCard);
-
-/************** EVENTOS **************/
-boardSelect.addEventListener('change',async()=>{
-  const id=boardSelect.value;
-  if(!id){listSelect.disabled=true;openCreateModalBtn.disabled=true;return;}
-  currentBoard=boards.find(b=>b.id===id);
+/* Eventos */
+boardSelect.onchange = async () => {
+  const id = boardSelect.value;
+  if (!id) return;
+  currentBoard = boards.find(b => b.id === id);
   await loadLists(id);
-  await loadBoardMembers(id);
-  await loadBoardLabels(id);
-});
+};
 
-listSelect.addEventListener('change',async()=>{
-  const id=listSelect.value;
-  if(!id){refreshBtn.disabled=true;return;}
-  currentList=(listsByBoard.get(currentBoard.id)||[]).find(l=>l.id===id);
-  refreshBtn.disabled=false;
+listSelect.onchange = async () => {
+  const id = listSelect.value;
+  if (!id) return;
+  currentList = lists.find(l => l.id === id);
   await loadCards(id);
-});
+};
 
-refreshBtn.addEventListener('click',()=>{
-  if(currentList)loadCards(currentList.id);
-});
+refreshBtn.onclick = () => {
+  if (currentList) loadCards(currentList.id);
+};
 
-/************** BOOT **************/
+/* Inicialização */
 loadBoards();
