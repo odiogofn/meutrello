@@ -78,6 +78,7 @@ function renderCards(cards){
     const labelList=node.querySelector('.label-list');
     c.labels?.forEach(l=>{const p=labelPillTpl.content.cloneNode(true);p.querySelector('.label-pill').textContent=l.name||l.color;labelList.append(p);});
     node.querySelector('.view-details').onclick=()=>showCardDetails(c.id);
+    node.querySelector('.move-card').onclick=()=>openMoveDialog(c);
     cardsListEl.append(node);
   });
 }
@@ -109,41 +110,29 @@ async function showCardDetails(id){
   ]);
   cardDetailsEl.classList.remove('hidden');clearChildren(cardDetailsEl);
 
-  // Cabeçalho
   const h2=el('h2');h2.textContent=c.name;
   const meta=el('div','muted');meta.textContent=`Última atividade: ${fmtDate(c.dateLastActivity)}`;
   cardDetailsEl.append(h2,meta);
-
-  // Descrição
   cardDetailsEl.innerHTML+=`<div class="info-block"><h3>Descrição</h3><div>${c.desc||'—'}</div></div>`;
 
-  // Membros
   const mem=el('div','info-block');mem.innerHTML='<h3>Membros</h3>';
   m.length?m.forEach(x=>mem.innerHTML+=`<span class="pill">${x.fullName}</span>`):mem.innerHTML+='<div>—</div>';
   cardDetailsEl.append(mem);
 
-  // Etiquetas
   const lbs=el('div','info-block');lbs.innerHTML='<h3>Etiquetas</h3>';
   c.labels.length?c.labels.forEach(l=>lbs.innerHTML+=`<span class="pill">${l.name||l.color}</span>`):lbs.innerHTML+='<div>—</div>';
   cardDetailsEl.append(lbs);
 
-  // Anexos
   const att=el('div','info-block');att.innerHTML='<h3>Anexos</h3>';
   const attList=el('div');
-  a.length?a.forEach(x=>{
-    attList.innerHTML+=`<div class="attachment"><a href="${x.url}" target="_blank">${x.name}</a></div>`;
-  }):attList.innerHTML='<div>—</div>';
+  a.length?a.forEach(x=>attList.innerHTML+=`<div class="attachment"><a href="${x.url}" target="_blank">${x.name}</a></div>`):attList.innerHTML='<div>—</div>';
   att.append(attList);cardDetailsEl.append(att);
 
-  // Comentários existentes
   const coms=el('div','info-block');coms.innerHTML='<h3>Comentários</h3>';
   const comList=el('div');
-  com.length?com.forEach(ca=>{
-    comList.innerHTML+=`<div class="history-item"><b>${ca.memberCreator.fullName}:</b> ${ca.data.text}</div>`;
-  }):comList.innerHTML='<div>—</div>';
+  com.length?com.forEach(ca=>comList.innerHTML+=`<div class="history-item"><b>${ca.memberCreator.fullName}:</b> ${ca.data.text}</div>`):comList.innerHTML='<div>—</div>';
   coms.append(comList);cardDetailsEl.append(coms);
 
-  // Campo adicionar comentário + imagem
   const add=el('div','info-block');
   add.innerHTML=`
     <h3>Adicionar comentário / imagem</h3>
@@ -158,7 +147,6 @@ async function showCardDetails(id){
   const preview=document.getElementById('commentPreview');
   let commentImages=[];
 
-  // Preview simples de imagem colada
   function renderCommentPreviews(){
     clearChildren(preview);
     if(!commentImages.length){
@@ -173,7 +161,6 @@ async function showCardDetails(id){
     });
   }
 
-  // Captura imagens coladas (Ctrl+V)
   commentBox.addEventListener('paste',e=>{
     const items=e.clipboardData.items;
     for(const it of items){
@@ -185,9 +172,7 @@ async function showCardDetails(id){
       }
     }
   });
-
-  // Arrastar & soltar imagem
-  commentBox.addEventListener('dragover',e=>{e.preventDefault();});
+  commentBox.addEventListener('dragover',e=>e.preventDefault());
   commentBox.addEventListener('drop',e=>{
     e.preventDefault();
     for(const f of e.dataTransfer.files){
@@ -199,7 +184,6 @@ async function showCardDetails(id){
     }
   });
 
-  // Enviar comentário e imagens
   sendBtn.onclick=async()=>{
     const txt=commentBox.value.trim();
     if(!txt && !commentImages.length)return alert('Digite um comentário ou adicione uma imagem.');
@@ -213,8 +197,63 @@ async function showCardDetails(id){
       await fetch(TRELLO(`cards/${id}/attachments`),{method:'POST',body:form});
       attList.innerHTML+=`<div class="attachment"><a href="#" target="_blank">[Nova imagem]</a></div>`;
     }
-    commentImages=[];
-    renderCommentPreviews();
+    commentImages=[];renderCommentPreviews();
+  };
+}
+
+/************** BOTÃO MOVER **************/
+async function openMoveDialog(card){
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.innerHTML=`
+    <div class="modal-content" style="max-width:400px;">
+      <h3>Mover "${card.name}"</h3>
+      <label>Quadro</label>
+      <select id="moveBoard"></select>
+      <label>Lista</label>
+      <select id="moveList"></select>
+      <div style="margin-top:10px;text-align:right;">
+        <button id="confirmMove" class="btn primary">Mover</button>
+        <button id="cancelMove" class="btn">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.append(modal);
+
+  const moveBoard=document.getElementById('moveBoard');
+  const moveList=document.getElementById('moveList');
+  const confirm=document.getElementById('confirmMove');
+  const cancel=document.getElementById('cancelMove');
+
+  boards.forEach(b=>{
+    const o=document.createElement('option');o.value=b.id;o.textContent=b.name;
+    if(b.id===currentBoard.id)o.selected=true;
+    moveBoard.append(o);
+  });
+
+  async function loadMoveLists(boardId){
+    const res=await fetch(TRELLO(`boards/${boardId}/lists`,{filter:'open'}));
+    const lists=await res.json();
+    moveList.innerHTML='';
+    lists.forEach(l=>{
+      const o=document.createElement('option');
+      o.value=l.id;o.textContent=l.name;
+      if(boardId===currentBoard.id && l.id===currentList.id)o.selected=true;
+      moveList.append(o);
+    });
+  }
+
+  await loadMoveLists(moveBoard.value);
+  moveBoard.onchange=()=>loadMoveLists(moveBoard.value);
+
+  cancel.onclick=()=>modal.remove();
+  confirm.onclick=async()=>{
+    const newBoard=moveBoard.value;
+    const newList=moveList.value;
+    await fetch(TRELLO(`cards/${card.id}`,{idBoard:newBoard,idList:newList}),{method:'PUT'});
+    alert(`Card movido com sucesso!`);
+    modal.remove();
+    loadCards(currentList.id);
   };
 }
 
