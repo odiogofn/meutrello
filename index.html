@@ -1,135 +1,134 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão Trello</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel Trello – Minimal</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>Gestão Trello</h1>
-    <p class="lead">Criar / mover cards, membros, etiquetas e anexos</p>
+  <header class="app-header">
+    <h1>Painel Trello</h1>
+    <div class="keys-hint">
+      <span>Usando API Key/Token fornecidos</span>
+    </div>
   </header>
 
-  <form id="trelloForm" class="form">
-    <div class="row">
-      <div class="col">
-        <label for="boardSelect">Quadro (Board)</label>
-        <select id="boardSelect"></select>
-      </div>
-      <div class="col">
-        <label for="listSelect">Lista (List)</label>
-        <select id="listSelect"></select>
-      </div>
-    </div>
+  <main class="container">
 
-    <div class="row">
-      <div class="col">
-        <label for="cardSelect">Card</label>
-        <select id="cardSelect">
-          <option value="">Criar novo card</option>
+    <section class="selectors">
+      <div class="field">
+        <label for="boardSelect">Quadro</label>
+        <select id="boardSelect">
+          <option value="">Selecione um quadro...</option>
         </select>
       </div>
-      <div class="col">
-        <label for="posSelect">Posição do card</label>
-        <select id="posSelect">
-          <option value="top">Topo</option>
-          <option value="bottom">Base</option>
+      <div class="field">
+        <label for="listSelect">Lista</label>
+        <select id="listSelect" disabled>
+          <option value="">Selecione um quadro primeiro</option>
         </select>
       </div>
-    </div>
+      <div class="actions">
+        <button id="refreshCards" class="btn" disabled>Atualizar Cards</button>
+        <button id="openCreateModal" class="btn primary" disabled>Novo Card</button>
+      </div>
+    </section>
 
-    <div class="row full">
-      <label for="cardName">Nome do card</label>
-      <input id="cardName" type="text" placeholder="Título do card" />
-    </div>
-    <div class="row full">
-      <label for="cardDesc">Descrição</label>
-      <textarea id="cardDesc" placeholder="Descrição do card"></textarea>
-    </div>
+    <!-- 🔍 Campo de busca -->
+    <section id="searchSection" style="margin-top:14px;display:none;">
+      <div class="field" style="width:100%;">
+        <label for="searchInput">Buscar nos cards</label>
+        <input type="text" id="searchInput" placeholder="Digite para filtrar por nome, descrição, etiqueta ou membro..." />
+      </div>
+    </section>
 
-    <!-- Membros -->
-    <div class="row full">
-      <label>Membros do card</label>
-      <div class="dual-listbox">
-        <div class="listbox">
-          <div class="listbox-title">Disponíveis</div>
-          <select id="membersAvailable" multiple></select>
+    <section id="cardsSection" class="cards-section">
+      <div id="cardsList" class="cards-list empty-state">
+        <p>Selecione um quadro e uma lista para carregar os cards.</p>
+      </div>
+      <aside id="cardDetails" class="card-details hidden"></aside>
+    </section>
+
+  </main>
+
+  <!-- Modal: Criar Card -->
+  <div id="createModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+      <div class="modal-header">
+        <h2 id="createTitle">Criar novo card</h2>
+        <button class="icon-btn" id="closeCreateModal" aria-label="Fechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid">
+          <div class="field">
+            <label for="newCardName">Nome</label>
+            <input id="newCardName" type="text" placeholder="Título do card" />
+          </div>
+
+          <div class="field">
+            <label for="newCardDesc">Descrição</label>
+            <textarea id="newCardDesc" rows="5" placeholder="Detalhes do card..."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="newCardMembers">Membros (do quadro)</label>
+            <select id="newCardMembers" multiple></select>
+            <small>Segure Ctrl/Cmd para selecionar múltiplos.</small>
+          </div>
+
+          <div class="field">
+            <label for="newCardLabels">Etiquetas (do quadro)</label>
+            <select id="newCardLabels" multiple></select>
+            <small>As cores/nome vêm do quadro atual.</small>
+          </div>
         </div>
-        <div class="listbox-controls">
-          <button type="button" id="addMember" class="small-btn">&gt;</button>
-          <button type="button" id="removeMember" class="small-btn">&lt;</button>
+
+        <div class="uploader">
+          <div class="uploader-header">
+            <h3>Anexos</h3>
+            <div class="uploader-hint">Arraste/solte arquivos aqui ou use <kbd>Ctrl</kbd>+<kbd>V</kbd> (prints/clipboard)</div>
+          </div>
+          <div id="dropZone" class="drop-zone" tabindex="0">Solte arquivos ou cole aqui</div>
+          <input id="fileInput" type="file" multiple class="file-input" />
+          <div class="uploader-actions">
+            <button id="pickFiles" class="btn">Selecionar Arquivos</button>
+          </div>
+          <div id="previewList" class="preview-list"></div>
         </div>
-        <div class="listbox">
-          <div class="listbox-title">Selecionados</div>
-          <select id="membersSelected" multiple></select>
-        </div>
+
+        <div id="createFeedback" class="feedback"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="createCardBtn" class="btn primary">Criar Card</button>
+        <button id="cancelCreate" class="btn">Cancelar</button>
       </div>
     </div>
+  </div>
 
-    <!-- Etiquetas -->
-    <div class="row full">
-      <label>Etiquetas (Labels)</label>
-      <div class="dual-listbox">
-        <div class="listbox">
-          <div class="listbox-title">Disponíveis</div>
-          <select id="labelsAvailable" multiple></select>
-        </div>
-        <div class="listbox-controls">
-          <button type="button" id="addLabel" class="small-btn">&gt;</button>
-          <button type="button" id="removeLabel" class="small-btn">&lt;</button>
-        </div>
-        <div class="listbox">
-          <div class="listbox-title">Selecionadas</div>
-          <select id="labelsSelected" multiple></select>
+  <template id="cardItemTpl">
+    <div class="card-item">
+      <div class="card-title-row">
+        <h3 class="card-title"></h3>
+        <div class="card-mini-badges">
+          <span class="badge comments" title="Comentários">💬 <span class="n"></span></span>
+          <span class="badge attachments" title="Anexos">📎 <span class="n"></span></span>
         </div>
       </div>
-    </div>
-
-    <!-- Anexos -->
-    <div class="row full">
-      <label>Anexos</label>
-
-      <!-- input nativo (continua valendo) -->
-      <input id="attachments" type="file" multiple />
-
-      <!-- drop/paste zone -->
-      <div id="dropArea" tabindex="0" aria-label="Área de anexos">
-        <div class="drop-text">
-          Arraste arquivos aqui, clique para escolher, ou <b>Ctrl + V</b> para colar imagens/arquivos
-          <div class="hint">Limite do Trello: até 10MB por arquivo</div>
-        </div>
+      <div class="card-meta">
+        <span class="label-list"></span>
       </div>
-
-      <!-- lista de anexos pendentes -->
-      <div id="pendingWrap">
-        <div class="pending-header">
-          <strong>Anexos pendentes (serão enviados ao salvar):</strong>
-          <button type="button" id="clearPending" class="secondary small">Limpar todos</button>
-        </div>
-        <ul id="pendingList"></ul>
+      <div class="card-actions">
+        <button class="btn subtle view-details">Detalhes</button>
+        <button class="btn subtle move-card">Mover</button>
       </div>
-
-      <!-- anexos existentes do card selecionado -->
-      <div id="attachmentsList"></div>
     </div>
+  </template>
 
-    <div class="row full actions">
-      <button type="submit" class="primary">Salvar Card</button>
-      <button type="button" id="resetBtn" class="secondary">Limpar</button>
-      <button type="button" id="toggleResponse" class="linkish">Mostrar/Esconder resposta API</button>
-    </div>
+  <template id="labelPillTpl">
+    <span class="label-pill"></span>
+  </template>
 
-    <pre id="response" hidden>nenhuma</pre>
-  </form>
-
-  <footer class="footer">
-    <small>Teste local — não exponha chaves em produção</small>
-  </footer>
-</div>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
