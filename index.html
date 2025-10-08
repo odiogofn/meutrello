@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Trello Minimalista</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Painel Trello</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="app-header">
@@ -23,37 +23,47 @@
 
   <main class="container">
     <section id="searchSection" style="display:none;">
-      <input id="searchInput" type="text" placeholder="Buscar card..." />
+      <input id="searchInput" type="text" placeholder="Buscar por nome, descrição, etiqueta ou membro..." />
     </section>
 
     <section class="cards-section">
       <div id="cardsList" class="cards-list"></div>
-      <div id="cardDetails" class="card-details hidden"></div>
+      <aside id="cardDetails" class="card-details hidden"></aside>
     </section>
   </main>
 
-  <!-- Modal de criação -->
-  <div id="createModal" class="modal hidden">
-    <div class="modal-content">
-      <button id="closeCreateModal" class="icon-btn">✕</button>
-      <h3>Novo Card</h3>
-      <label>Nome</label>
+  <!-- Modal: Novo Card -->
+  <div id="createModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+      <button id="closeCreateModal" class="icon-btn" aria-label="Fechar">✕</button>
+      <h3 id="createTitle">Novo Card</h3>
+
+      <label for="newCardName">Nome</label>
       <input type="text" id="newCardName" placeholder="Título do card" />
 
-      <label>Descrição</label>
-      <textarea id="newCardDesc" rows="3" placeholder="Descrição..."></textarea>
+      <label for="newCardDesc">Descrição</label>
+      <textarea id="newCardDesc" rows="3" placeholder="Descrição do card..."></textarea>
 
-      <label>Membros</label>
+      <label for="newCardMembers">Membros (do quadro)</label>
       <select id="newCardMembers" multiple></select>
 
-      <label>Etiquetas</label>
+      <label for="newCardLabels">Etiquetas (do quadro)</label>
       <select id="newCardLabels" multiple></select>
 
-      <div class="buttons">
-        <button id="createCardBtn" class="btn primary">Criar</button>
-        <button id="cancelCreate" class="btn">Cancelar</button>
+      <div class="uploader">
+        <h4>Anexos</h4>
+        <div id="dropZone" class="drop-zone" tabindex="0">Arraste arquivos ou cole imagens aqui (Ctrl+V)</div>
+        <input id="fileInput" type="file" multiple class="file-input" />
+        <div class="uploader-actions">
+          <button id="pickFiles" class="btn">Selecionar Arquivos</button>
+        </div>
+        <div id="previewList" class="preview-list"></div>
       </div>
 
+      <div class="buttons">
+        <button id="createCardBtn" class="btn primary">Criar Card</button>
+        <button id="cancelCreate" class="btn">Cancelar</button>
+      </div>
       <div id="createFeedback" class="feedback"></div>
     </div>
   </div>
