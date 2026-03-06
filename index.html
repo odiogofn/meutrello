@@ -2,93 +2,169 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Trello</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Trello - Outlook</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="app-header">
-    <h2>Painel Trello</h2>
-    <div class="actions">
-      <select id="boardSelect">
-        <option value="">Selecione um quadro...</option>
-      </select>
-      <select id="listSelect" disabled>
-        <option value="">Selecione uma lista...</option>
-      </select>
-      <button id="refreshCards" class="btn">🔄 Atualizar</button>
-      <button id="openCreateModal" class="btn primary" disabled>➕ Novo</button>
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Painel Trello</h1>
+      <span class="topbar-subtitle">Estilo Outlook</span>
+    </div>
+
+    <div class="topbar-right">
+      <button id="newCardBtn" class="btn primary" disabled>+ Novo Card</button>
+      <button id="refreshCurrentBtn" class="btn" disabled>Atualizar</button>
     </div>
   </header>
 
-  <main class="container">
-    <section id="searchSection" style="display:none;">
-      <input id="searchInput" type="text" placeholder="Buscar por nome, descrição, etiqueta ou membro..." />
+  <main class="app-layout">
+    <!-- QUADROS -->
+    <section class="pane pane-boards">
+      <div class="pane-header">
+        <h2>Quadros</h2>
+      </div>
+      <div id="boardsList" class="pane-body list-scroll"></div>
     </section>
 
-    <section class="cards-section">
-      <div id="cardsList" class="cards-list"></div>
-     <aside id="cardDetails" class="card-details hidden">
-       <button id="closeDetails" class="close-details-btn" aria-label="Fechar detalhes">✕</button>
-       <div id="cardDetailsContent"></div>
-     </aside>
+    <!-- LISTAS -->
+    <section class="pane pane-lists">
+      <div class="pane-header">
+        <h2>Listas</h2>
+        <div id="currentBoardName" class="pane-context">Selecione um quadro</div>
+      </div>
+      <div id="listsList" class="pane-body list-scroll empty-pane">
+        <p>Selecione um quadro.</p>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section class="pane pane-cards">
+      <div class="pane-header">
+        <div class="cards-header-top">
+          <h2>Cards</h2>
+          <input id="searchInput" type="text" placeholder="Buscar card..." disabled />
+        </div>
+        <div id="currentListName" class="pane-context">Selecione uma lista</div>
+      </div>
+      <div id="cardsList" class="pane-body list-scroll empty-pane">
+        <p>Selecione uma lista.</p>
+      </div>
+    </section>
+
+    <!-- PAINEL DIREITO -->
+    <section class="pane pane-detail">
+      <div class="pane-header detail-header">
+        <div>
+          <h2>Card</h2>
+          <div id="detailContext" class="pane-context">Nenhum card selecionado</div>
+        </div>
+        <div class="detail-header-actions">
+          <button id="closeDetailBtn" class="icon-btn hidden" aria-label="Fechar painel">✕</button>
+        </div>
+      </div>
+
+      <div id="detailEmpty" class="pane-body detail-empty">
+        <p>Selecione um card para visualizar e editar.</p>
+      </div>
+
+      <div id="detailPanel" class="pane-body detail-panel hidden">
+        <div class="detail-section">
+          <label for="detailTitle">Nome</label>
+          <input id="detailTitle" type="text" />
+        </div>
+
+        <div class="detail-section">
+          <label for="detailDesc">Descrição</label>
+          <textarea id="detailDesc" rows="6"></textarea>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-section">
+            <label for="detailMembers">Membros</label>
+            <select id="detailMembers" multiple></select>
+            <small>Ctrl/Cmd para múltipla seleção</small>
+          </div>
+
+          <div class="detail-section">
+            <label for="detailLabels">Etiquetas</label>
+            <select id="detailLabels" multiple></select>
+            <small>Ctrl/Cmd para múltipla seleção</small>
+          </div>
+        </div>
+
+        <div class="detail-actions">
+          <button id="saveCardBtn" class="btn primary">Salvar Alterações</button>
+          <button id="moveCardBtn" class="btn">Mover Card</button>
+          <a id="openTrelloLink" class="btn-link" href="#" target="_blank" rel="noopener">Abrir no Trello</a>
+        </div>
+
+        <div class="detail-section">
+          <h3>Anexos</h3>
+          <div class="attach-upload-row">
+            <input id="detailAttachInput" type="file" multiple />
+            <button id="uploadAttachmentsBtn" class="btn">Enviar Arquivos</button>
+          </div>
+          <div id="attachmentsList" class="attachments-list"></div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Comentários</h3>
+          <div class="comment-compose">
+            <textarea id="newCommentText" rows="3" placeholder="Escreva um comentário..."></textarea>
+            <div class="comment-compose-actions">
+              <button id="sendCommentBtn" class="btn primary">Comentar</button>
+            </div>
+          </div>
+          <div id="commentsList" class="comments-list"></div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <!-- Modal: Novo Card -->
-  <div id="createModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="createTitle">
-      <button id="closeCreateModal" class="icon-btn" aria-label="Fechar">✕</button>
-      <h3 id="createTitle">Novo Card</h3>
+  <!-- MODAL NOVO CARD -->
+  <div id="newCardModal" class="modal hidden">
+    <div class="modal-content">
+      <button id="closeNewCardModalBtn" class="icon-btn modal-close" aria-label="Fechar">✕</button>
+      <h3>Novo Card</h3>
 
-      <label for="newCardName">Nome</label>
-      <input type="text" id="newCardName" placeholder="Título do card" />
+      <div class="form-row">
+        <label for="newCardTitle">Nome</label>
+        <input id="newCardTitle" type="text" />
+      </div>
 
-      <label for="newCardDesc">Descrição</label>
-      <textarea id="newCardDesc" rows="3" placeholder="Descrição do card..."></textarea>
+      <div class="form-row">
+        <label for="newCardDescription">Descrição</label>
+        <textarea id="newCardDescription" rows="5"></textarea>
+      </div>
 
-      <label for="newCardMembers">Membros (do quadro)</label>
-      <select id="newCardMembers" multiple></select>
-
-      <label for="newCardLabels">Etiquetas (do quadro)</label>
-      <select id="newCardLabels" multiple></select>
-
-      <div class="uploader">
-        <h4>Anexos</h4>
-        <div id="dropZone" class="drop-zone" tabindex="0">Arraste arquivos ou cole imagens aqui (Ctrl+V)</div>
-        <input id="fileInput" type="file" multiple class="file-input" />
-        <div class="uploader-actions">
-          <button id="pickFiles" class="btn">Selecionar Arquivos</button>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="newCardMembers">Membros</label>
+          <select id="newCardMembers" multiple></select>
         </div>
-        <div id="previewList" class="preview-list"></div>
+        <div class="form-row">
+          <label for="newCardLabels">Etiquetas</label>
+          <select id="newCardLabels" multiple></select>
+        </div>
       </div>
 
-      <div class="buttons">
-        <button id="createCardBtn" class="btn primary">Criar Card</button>
-        <button id="cancelCreate" class="btn">Cancelar</button>
+      <div class="form-row">
+        <label>Anexos</label>
+        <div id="newCardDropZone" class="drop-zone">Arraste arquivos aqui ou clique para selecionar</div>
+        <input id="newCardFileInput" type="file" multiple class="hidden-input" />
+        <div id="newCardFilesPreview" class="file-preview-list"></div>
       </div>
-      <div id="createFeedback" class="feedback"></div>
+
+      <div class="modal-footer">
+        <button id="createCardBtn" class="btn primary">Criar Card</button>
+        <button id="cancelNewCardBtn" class="btn">Cancelar</button>
+      </div>
+
+      <div id="newCardFeedback" class="feedback"></div>
     </div>
   </div>
-
-  <!-- Templates -->
-  <template id="cardItemTpl">
-    <div class="card-item">
-      <div class="card-title-row">
-        <h4 class="card-title"></h4>
-        <div class="card-actions">
-          <button class="view-details btn">Detalhes</button>
-          <button class="move-card btn">Mover</button>
-        </div>
-      </div>
-      <div class="label-list"></div>
-    </div>
-  </template>
-
-  <template id="labelPillTpl">
-    <span class="label-pill"></span>
-  </template>
-
-  <script src="script.js"></script>
 </body>
+<script src="script.js"></script>
 </html>
