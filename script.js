@@ -251,21 +251,19 @@ function renderCards(sourceCards){
   }
 
   sourceCards.forEach(card=>{
-    const row = document.createElement('div');
-    row.className = `card-row ${currentCard?.id === card.id ? 'active' : ''}`;
-    row.innerHTML = `
-      <div class="card-row-title">${escapeHtml(card.name)}</div>
-      <div class="card-row-desc">${escapeHtml(card.desc || 'Sem descrição')}</div>
-      <div class="card-row-meta">
-        <div class="label-list">${renderLabelsInline(card.labels || [])}</div>
-      </div>
+    const item = document.createElement('div');
+    item.className = `item ${currentCard?.id === card.id ? 'active' : ''}`;
+    item.innerHTML = `
+      <div class="item-title">${escapeHtml(card.name)}</div>
+      <div class="item-sub">${escapeHtml(card.desc || 'Sem descrição')}</div>
+      <div class="label-list">${renderLabelsInline(card.labels || [])}</div>
     `;
-    row.onclick = async ()=>{
+    item.onclick = async ()=>{
       currentCard = card;
       renderCards(sourceCards);
       await openCardDetail(card.id);
     };
-    cardsListEl.appendChild(row);
+    cardsListEl.appendChild(item);
   });
 }
 
@@ -317,12 +315,9 @@ async function openCardDetail(cardId){
   attachmentsList.innerHTML = '';
   commentsList.innerHTML = '';
 
-  const [card, members, attachments, comments] = await Promise.all([
+  const [card, attachments, comments] = await Promise.all([
     fetch(TRELLO(`cards/${cardId}`, {
       fields:'name,desc,idMembers,idLabels,shortUrl,dateLastActivity,idBoard,idList'
-    })).then(r=>r.json()),
-    fetch(TRELLO(`cards/${cardId}/members`, {
-      fields:'fullName,username'
     })).then(r=>r.json()),
     fetch(TRELLO(`cards/${cardId}/attachments`, {
       fields:'name,url,date'
@@ -333,10 +328,7 @@ async function openCardDetail(cardId){
     })).then(r=>r.json())
   ]);
 
-  currentCard = {
-    ...currentCard,
-    ...card
-  };
+  currentCard = { ...currentCard, ...card };
 
   detailContextEl.textContent = currentCard.name || 'Card';
   detailTitle.value = card.name || '';
