@@ -119,6 +119,7 @@ body{
   text-align:center;
 }
 
+/* LISTAS VISUAIS PADRÃO */
 .item{
   border:1px solid transparent;
   border-radius:8px;
@@ -151,6 +152,7 @@ body{
   margin-top:4px;
 }
 
+/* MESMO VISUAL DOS QUADROS PARA LISTAS E CARDS */
 .cards-header-top{
   display:flex;
   gap:10px;
@@ -162,71 +164,7 @@ body{
   width:170px;
 }
 
-.card-row{
-  border:1px solid #e5e7eb;
-  border-radius:10px;
-  background:#fff;
-  padding:10px;
-  margin-bottom:10px;
-  cursor:pointer;
-  transition:.15s ease;
-}
-
-.card-row:hover{
-  background:#f9fbfd;
-  border-color:#d6dde6;
-}
-
-.card-row.active{
-  background:#eaf3ff;
-  border-color:#bfdbfe;
-}
-
-.card-row-title{
-  font-size:14px;
-  font-weight:600;
-  margin:0 0 8px 0;
-  line-height:1.35;
-}
-
-.card-row-desc{
-  font-size:12px;
-  color:var(--muted);
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-  margin-bottom:8px;
-}
-
-.card-row-meta{
-  display:flex;
-  justify-content:space-between;
-  gap:8px;
-  align-items:center;
-}
-
-.label-list{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-}
-
-.label-pill{
-  display:inline-flex;
-  align-items:center;
-  padding:2px 8px;
-  border-radius:999px;
-  font-size:11px;
-  background:#e8eef6;
-  color:#334155;
-}
-
-.card-mini-actions{
-  display:flex;
-  gap:6px;
-}
-
+/* detalhes */
 .detail-header{
   display:flex;
   align-items:flex-start;
@@ -334,6 +272,23 @@ body{
   margin-top:8px;
   display:flex;
   justify-content:flex-end;
+}
+
+.label-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:6px;
+}
+
+.label-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  background:#e8eef6;
+  color:#334155;
 }
 
 input[type="text"],
