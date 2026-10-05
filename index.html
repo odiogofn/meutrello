@@ -3,169 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Trello - Outlook</title>
+  <title>MeuTrello 2.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-left">
-      <h1>Painel Trello</h1>
-      <span class="topbar-subtitle">Estilo Outlook</span>
-    </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">M</div><div><strong>MeuTrello</strong><span>Gestão de demandas</span></div></div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="workspace"><span>▦</span> Workspace</button>
+        <button class="nav-item" id="navBoards"><span>▣</span> Quadros</button>
+        <button class="nav-item" id="navFavorites"><span>☆</span> Favoritos</button>
+      </nav>
+      <div class="sidebar-section"><span>QUADROS</span><div id="boardsList" class="sidebar-boards"></div></div>
+      <div class="sidebar-footer"><div class="status-dot"></div><div><strong>Trello conectado</strong><span>MeuTrello 2.0</span></div></div>
+    </aside>
 
-    <div class="topbar-right">
-      <button id="newCardBtn" class="btn primary" disabled>+ Novo Card</button>
-      <button id="refreshCurrentBtn" class="btn" disabled>Atualizar</button>
-    </div>
-  </header>
+    <div class="main-shell">
+      <header class="topbar">
+        <div><div class="breadcrumb">Workspace / <span id="currentBoardName">Selecione um quadro</span></div><h1 id="pageTitle">Minhas demandas</h1></div>
+        <div class="top-actions"><button id="refreshCurrentBtn" class="btn ghost" disabled>↻ Atualizar</button><button id="newCardBtn" class="btn primary" disabled>＋ Nova demanda</button></div>
+      </header>
 
-  <main class="app-layout">
-    <!-- QUADROS -->
-    <section class="pane pane-boards">
-      <div class="pane-header">
-        <h2>Quadros</h2>
-      </div>
-      <div id="boardsList" class="pane-body list-scroll"></div>
-    </section>
+      <main class="content"><span id="currentListName" class="hidden"></span>
+        <section class="metrics">
+          <article><span>Total no quadro</span><strong id="metricTotal">—</strong><small>Demandas carregadas</small></article>
+          <article><span>Lista atual</span><strong id="metricList">—</strong><small id="metricListName">Nenhuma selecionada</small></article>
+          <article><span>Responsáveis</span><strong id="metricMembers">—</strong><small>Membros do quadro</small></article>
+          <article><span>Etiquetas</span><strong id="metricLabels">—</strong><small>Tipos disponíveis</small></article>
+        </section>
 
-    <!-- LISTAS -->
-    <section class="pane pane-lists">
-      <div class="pane-header">
-        <h2>Listas</h2>
-        <div id="currentBoardName" class="pane-context">Selecione um quadro</div>
-      </div>
-      <div id="listsList" class="pane-body list-scroll empty-pane">
-        <p>Selecione um quadro.</p>
-      </div>
-    </section>
-
-    <!-- CARDS -->
-    <section class="pane pane-cards">
-      <div class="pane-header">
-        <div class="cards-header-top">
-          <h2>Cards</h2>
-          <input id="searchInput" type="text" placeholder="Buscar card..." disabled />
-        </div>
-        <div id="currentListName" class="pane-context">Selecione uma lista</div>
-      </div>
-      <div id="cardsList" class="pane-body list-scroll empty-pane">
-        <p>Selecione uma lista.</p>
-      </div>
-    </section>
-
-    <!-- DETALHES -->
-    <section class="pane pane-detail">
-      <div class="pane-header detail-header">
-        <div>
-          <h2>Card</h2>
-          <div id="detailContext" class="pane-context">Nenhum card selecionado</div>
-        </div>
-        <div class="detail-header-actions">
-          <button id="closeDetailBtn" class="icon-btn hidden" aria-label="Fechar painel">✕</button>
-        </div>
-      </div>
-
-      <div id="detailEmpty" class="pane-body detail-empty">
-        <p>Selecione um card para visualizar e editar.</p>
-      </div>
-
-      <div id="detailPanel" class="pane-body detail-panel hidden">
-        <div class="detail-section">
-          <label for="detailTitle">Nome</label>
-          <input id="detailTitle" type="text" />
-        </div>
-
-        <div class="detail-section">
-          <label for="detailDesc">Descrição</label>
-          <textarea id="detailDesc" rows="6"></textarea>
-        </div>
-
-        <div class="detail-grid">
-          <div class="detail-section">
-            <label for="detailMembers">Membros</label>
-            <select id="detailMembers" multiple></select>
-            <small>Ctrl/Cmd para múltipla seleção</small>
+        <section class="workspace-card">
+          <div class="workspace-toolbar">
+            <div class="list-tabs-wrap"><div class="toolbar-label">LISTAS</div><div id="listsList" class="list-tabs"><span class="muted">Selecione um quadro</span></div></div>
+            <div class="toolbar-tools"><div class="search-box">⌕ <input id="searchInput" type="search" placeholder="Buscar demanda..." disabled /></div></div>
           </div>
 
-          <div class="detail-section">
-            <label for="detailLabels">Etiquetas</label>
-            <select id="detailLabels" multiple></select>
-            <small>Ctrl/Cmd para múltipla seleção</small>
-          </div>
-        </div>
-
-        <div class="detail-actions">
-          <button id="saveCardBtn" class="btn primary">Salvar Alterações</button>
-          <button id="moveCardBtn" class="btn">Mover Card</button>
-          <a id="openTrelloLink" class="btn-link" href="#" target="_blank" rel="noopener">Abrir no Trello</a>
-        </div>
-
-        <div class="detail-section">
-          <h3>Anexos</h3>
-          <div class="attach-upload-row">
-            <input id="detailAttachInput" type="file" multiple />
-            <button id="uploadAttachmentsBtn" class="btn">Enviar Arquivos</button>
-          </div>
-          <div id="attachmentsList" class="attachments-list"></div>
-        </div>
-
-        <div class="detail-section">
-          <h3>Comentários</h3>
-          <div class="comment-compose">
-            <textarea id="newCommentText" rows="3" placeholder="Escreva um comentário..."></textarea>
-            <div class="comment-compose-actions">
-              <button id="sendCommentBtn" class="btn primary">Comentar</button>
-            </div>
-          </div>
-          <div id="commentsList" class="comments-list"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- MODAL NOVO CARD -->
-  <div id="newCardModal" class="modal hidden">
-    <div class="modal-content">
-      <button id="closeNewCardModalBtn" class="icon-btn modal-close" aria-label="Fechar">✕</button>
-      <h3>Novo Card</h3>
-
-      <div class="form-row">
-        <label for="newCardTitle">Nome</label>
-        <input id="newCardTitle" type="text" />
-      </div>
-
-      <div class="form-row">
-        <label for="newCardDescription">Descrição</label>
-        <textarea id="newCardDescription" rows="5"></textarea>
-      </div>
-
-      <div class="form-grid">
-        <div class="form-row">
-          <label for="newCardMembers">Membros</label>
-          <select id="newCardMembers" multiple></select>
-        </div>
-        <div class="form-row">
-          <label for="newCardLabels">Etiquetas</label>
-          <select id="newCardLabels" multiple></select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label>Anexos</label>
-        <div id="newCardDropZone" class="drop-zone">Arraste arquivos aqui ou clique para selecionar</div>
-        <input id="newCardFileInput" type="file" multiple class="hidden-input" />
-        <div id="newCardFilesPreview" class="file-preview-list"></div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="createCardBtn" class="btn primary">Criar Card</button>
-        <button id="cancelNewCardBtn" class="btn">Cancelar</button>
-      </div>
-
-      <div id="newCardFeedback" class="feedback"></div>
+          <div class="table-head"><span>DEMANDA</span><span>ETIQUETAS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div>
+          <div id="cardsList" class="cards-table"><div class="empty-state"><div class="empty-icon">▦</div><h3>Escolha um quadro</h3><p>Selecione um quadro e uma lista para visualizar as demandas.</p></div></div>
+        </section>
+      </main>
     </div>
   </div>
 
+  <aside id="detailDrawer" class="drawer">
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <div class="drawer-panel">
+      <div class="drawer-head"><div><span class="eyebrow">DETALHES DA DEMANDA</span><h2 id="detailContext">Demanda</h2></div><button id="closeDetailBtn" class="icon-btn">×</button></div>
+      <div id="detailEmpty" class="drawer-empty">Selecione uma demanda.</div>
+      <div id="detailPanel" class="drawer-body hidden">
+        <div class="field"><label>Nome da demanda</label><input id="detailTitle" type="text" /></div>
+        <div class="field"><label>Descrição</label><textarea id="detailDesc" rows="5"></textarea></div>
+        <div class="form-grid"><div class="field"><label>Responsáveis</label><select id="detailMembers" multiple></select><small>Ctrl/Cmd para selecionar vários</small></div><div class="field"><label>Etiquetas</label><select id="detailLabels" multiple></select><small>Ctrl/Cmd para selecionar várias</small></div></div>
+        <div class="drawer-actions"><button id="saveCardBtn" class="btn primary">Salvar alterações</button><button id="moveCardBtn" class="btn">Mover</button><button id="deleteCardBtn" class="btn danger">Excluir</button><a id="openTrelloLink" class="btn link" href="#" target="_blank" rel="noopener">Abrir no Trello ↗</a></div>
+        <div class="divider"></div>
+        <section class="detail-section"><div class="section-title"><h3>Anexos</h3></div><div class="upload-row"><input id="detailAttachInput" type="file" multiple /><button id="uploadAttachmentsBtn" class="btn">Enviar</button></div><div id="attachmentsList" class="stack-list"></div></section>
+        <section class="detail-section"><div class="section-title"><h3>Comentários</h3></div><textarea id="newCommentText" rows="3" placeholder="Escreva um comentário..."></textarea><button id="sendCommentBtn" class="btn primary compact">Comentar</button><div id="commentsList" class="stack-list"></div></section>
+      </div>
+    </div>
+  </aside>
+
+  <div id="newCardModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">NOVA DEMANDA</span><h2>Criar demanda</h2></div><button id="closeNewCardModalBtn" class="icon-btn">×</button></div><div class="modal-body"><div class="field"><label>Nome</label><input id="newCardTitle" type="text" placeholder="Ex.: Revisar relatório mensal" /></div><div class="field"><label>Descrição</label><textarea id="newCardDescription" rows="5" placeholder="Descreva a demanda..."></textarea></div><div class="form-grid"><div class="field"><label>Responsáveis</label><select id="newCardMembers" multiple></select></div><div class="field"><label>Etiquetas</label><select id="newCardLabels" multiple></select></div></div><div class="field"><label>Anexos</label><div id="newCardDropZone" class="drop-zone">Arraste arquivos aqui ou clique para selecionar</div><input id="newCardFileInput" type="file" multiple class="hidden-input" /><div id="newCardFilesPreview" class="file-preview-list"></div></div><div id="newCardFeedback" class="feedback"></div></div><div class="modal-footer"><button id="cancelNewCardBtn" class="btn">Cancelar</button><button id="createCardBtn" class="btn primary">Criar demanda</button></div></div></div>
+  <div id="toast" class="toast"></div>
   <script src="script.js"></script>
 </body>
 </html>

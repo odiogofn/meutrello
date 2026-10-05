@@ -83,6 +83,7 @@ function fmtDate(value){
 }
 
 function showEmptyDetail(){
+  document.getElementById('detailDrawer')?.classList.remove('open');
   detailEmpty.classList.remove('hidden');
   detailPanel.classList.add('hidden');
   closeDetailBtn.classList.add('hidden');
@@ -91,6 +92,7 @@ function showEmptyDetail(){
 }
 
 function showDetailPanel(){
+  document.getElementById('detailDrawer')?.classList.add('open');
   detailEmpty.classList.add('hidden');
   detailPanel.classList.remove('hidden');
   closeDetailBtn.classList.remove('hidden');
@@ -164,109 +166,63 @@ async function loadBoardLabels(boardId){
 }
 
 /************** RENDERS **************/
+function updateMetrics(){
+  document.getElementById('metricTotal').textContent = cards.length || (currentList ? '0' : '—');
+  document.getElementById('metricList').textContent = currentList ? cards.length : '—';
+  document.getElementById('metricListName').textContent = currentList?.name || 'Nenhuma selecionada';
+  document.getElementById('metricMembers').textContent = currentBoard ? boardMembers.length : '—';
+  document.getElementById('metricLabels').textContent = currentBoard ? boardLabels.length : '—';
+}
+function toast(message, error=false){
+  const el=document.getElementById('toast'); if(!el) return;
+  el.textContent=message; el.className='toast show'+(error?' error':'');
+  clearTimeout(window.__toastTimer); window.__toastTimer=setTimeout(()=>el.className='toast',2600);
+}
 function renderBoards(){
   clearEl(boardsListEl);
-
-  if(!boards.length){
-    boardsListEl.innerHTML = `<div class="empty-pane"><p>Nenhum quadro encontrado.</p></div>`;
-    return;
-  }
-
+  if(!boards.length){ boardsListEl.innerHTML='<div class="muted">Nenhum quadro.</div>'; return; }
   boards.forEach(board=>{
-    const item = document.createElement('div');
-    item.className = `item ${currentBoard?.id === board.id ? 'active' : ''}`;
-    item.innerHTML = `
-      <div class="item-title">${escapeHtml(board.name)}</div>
-      <div class="item-sub">Quadro</div>
-    `;
-    item.onclick = async ()=>{
-      currentBoard = board;
-      currentList = null;
-      currentCard = null;
-
-      currentBoardNameEl.textContent = board.name;
-      currentListNameEl.textContent = 'Selecione uma lista';
-      detailContextEl.textContent = 'Nenhum card selecionado';
-
-      refreshCurrentBtn.disabled = false;
-      newCardBtn.disabled = true;
-      searchInput.disabled = true;
-      searchInput.value = '';
-
-      renderBoards();
-      listsListEl.innerHTML = `<div class="empty-pane"><p>Carregando listas...</p></div>`;
-      cardsListEl.innerHTML = `<div class="empty-pane"><p>Selecione uma lista.</p></div>`;
-      showEmptyDetail();
-
-      await Promise.all([
-        loadLists(board.id),
-        loadBoardMembers(board.id),
-        loadBoardLabels(board.id)
-      ]);
+    const item=document.createElement('div');
+    item.className=`board-nav ${currentBoard?.id===board.id?'active':''}`;
+    item.textContent=board.name;
+    item.onclick=async()=>{
+      currentBoard=board; currentList=null; currentCard=null; cards=[];
+      currentBoardNameEl.textContent=board.name;
+      document.getElementById('pageTitle').textContent=board.name;
+      currentListNameEl.textContent='Selecione uma lista';
+      refreshCurrentBtn.disabled=false; newCardBtn.disabled=true; searchInput.disabled=true; searchInput.value='';
+      renderBoards(); listsListEl.innerHTML='<span class="muted">Carregando listas...</span>';
+      cardsListEl.innerHTML='<div class="empty-state"><div class="empty-icon">▤</div><h3>Escolha uma lista</h3><p>As demandas aparecerão aqui.</p></div>';
+      showEmptyDetail(); updateMetrics();
+      await Promise.all([loadLists(board.id),loadBoardMembers(board.id),loadBoardLabels(board.id)]); updateMetrics();
     };
     boardsListEl.appendChild(item);
   });
 }
-
 function renderLists(){
   clearEl(listsListEl);
-
-  if(!lists.length){
-    listsListEl.innerHTML = `<div class="empty-pane"><p>Nenhuma lista encontrada.</p></div>`;
-    return;
-  }
-
+  if(!lists.length){listsListEl.innerHTML='<span class="muted">Nenhuma lista encontrada.</span>';return;}
   lists.forEach(list=>{
-    const item = document.createElement('div');
-    item.className = `item ${currentList?.id === list.id ? 'active' : ''}`;
-    item.innerHTML = `
-      <div class="item-title">${escapeHtml(list.name)}</div>
-      <div class="item-sub">Lista</div>
-    `;
-    item.onclick = async ()=>{
-      currentList = list;
-      currentCard = null;
-
-      currentListNameEl.textContent = list.name;
-      newCardBtn.disabled = false;
-      searchInput.disabled = false;
-      searchInput.value = '';
-
-      renderLists();
-      cardsListEl.innerHTML = `<div class="empty-pane"><p>Carregando cards...</p></div>`;
-      showEmptyDetail();
-
-      await loadCards(list.id);
+    const item=document.createElement('button'); item.className=`list-tab ${currentList?.id===list.id?'active':''}`; item.textContent=list.name;
+    item.onclick=async()=>{
+      currentList=list; currentCard=null; currentListNameEl.textContent=list.name; newCardBtn.disabled=false; searchInput.disabled=false; searchInput.value='';
+      renderLists(); cardsListEl.innerHTML='<div class="empty-state"><p>Carregando demandas...</p></div>'; showEmptyDetail(); await loadCards(list.id); updateMetrics();
     };
     listsListEl.appendChild(item);
   });
 }
-
 function renderCards(sourceCards){
-  clearEl(cardsListEl);
-
-  if(!sourceCards.length){
-    cardsListEl.innerHTML = `<div class="empty-pane"><p>Nenhum card encontrado.</p></div>`;
-    return;
-  }
-
+  clearEl(cardsListEl); updateMetrics();
+  if(!sourceCards.length){cardsListEl.innerHTML='<div class="empty-state"><div class="empty-icon">＋</div><h3>Nenhuma demanda</h3><p>Crie a primeira demanda desta lista.</p></div>';return;}
   sourceCards.forEach(card=>{
-    const item = document.createElement('div');
-    item.className = `item ${currentCard?.id === card.id ? 'active' : ''}`;
-    item.innerHTML = `
-      <div class="item-title">${escapeHtml(card.name)}</div>
-      <div class="item-sub">${escapeHtml(card.desc || 'Sem descrição')}</div>
-      <div class="label-list">${renderLabelsInline(card.labels || [])}</div>
-    `;
-    item.onclick = async ()=>{
-      currentCard = card;
-      renderCards(sourceCards);
-      await openCardDetail(card.id);
-    };
-    cardsListEl.appendChild(item);
+    const row=document.createElement('div'); row.className='card-row';
+    row.innerHTML=`<div class="card-main"><div class="card-title">${escapeHtml(card.name)}</div><div class="card-desc">${escapeHtml(card.desc||'Sem descrição')}</div></div><div class="label-list">${renderLabelsInline(card.labels||[])||'<span class="muted">—</span>'}</div><div class="date-cell">${fmtDate(card.dateLastActivity)}</div><div class="row-actions"><button class="row-btn edit" title="Editar">✎</button><button class="row-btn danger delete" title="Excluir">⌫</button></div>`;
+    const open=async()=>{currentCard=card; await openCardDetail(card.id)};
+    row.querySelector('.card-main').onclick=open; row.querySelector('.edit').onclick=open;
+    row.querySelector('.delete').onclick=async(e)=>{e.stopPropagation();await deleteCard(card)};
+    cardsListEl.appendChild(row);
   });
 }
-
 function renderBoardMembersOptions(){
   newCardMembers.innerHTML = '';
   detailMembers.innerHTML = '';
@@ -408,7 +364,7 @@ saveCardBtn.addEventListener('click', async ()=>{
 
   await loadCards(currentList.id);
   await openCardDetail(currentCard.id);
-  alert('✅ Card atualizado.');
+  toast('Demanda atualizada com sucesso.');
 });
 
 /************** COMMENTS **************/
@@ -456,7 +412,7 @@ uploadAttachmentsBtn.addEventListener('click', async ()=>{
 
   detailAttachInput.value = '';
   await openCardDetail(currentCard.id);
-  alert('✅ Arquivo(s) anexado(s).');
+  toast('Arquivo(s) anexado(s).');
 });
 
 /************** MOVE CARD **************/
@@ -565,7 +521,7 @@ async function openMoveDialog(){
       showEmptyDetail();
     }
 
-    alert('✅ Card movido.');
+    toast('Demanda movida com sucesso.');
   };
 }
 
@@ -755,11 +711,24 @@ createCardBtn.addEventListener('click', async ()=>{
   setTimeout(closeNewCardModal, 900);
 });
 
+/************** DELETE CARD **************/
+async function deleteCard(card=currentCard){
+  if(!card?.id) return;
+  if(!confirm(`Excluir a demanda "${card.name}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res=await fetch(TRELLO(`cards/${card.id}`),{method:'DELETE'});
+  if(!res.ok){toast('Não foi possível excluir a demanda.',true);return;}
+  if(currentCard?.id===card.id) showEmptyDetail();
+  await loadCards(currentList.id); toast('Demanda excluída.');
+}
+document.getElementById('deleteCardBtn')?.addEventListener('click',()=>deleteCard(currentCard));
+document.getElementById('drawerBackdrop')?.addEventListener('click',showEmptyDetail);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){showEmptyDetail(); if(!newCardModal.classList.contains('hidden')) closeNewCardModal();}});
+
 /************** START **************/
 (async function init(){
   try{
     await loadBoards();
-    showEmptyDetail();
+    showEmptyDetail(); updateMetrics();
   }catch(err){
     console.error(err);
     boardsListEl.innerHTML = `<div class="empty-pane"><p>Erro ao carregar dados do Trello.</p></div>`;
