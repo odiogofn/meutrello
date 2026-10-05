@@ -34,6 +34,7 @@ const attachmentsList = document.getElementById('attachmentsList');
 const newCommentText = document.getElementById('newCommentText');
 const sendCommentBtn = document.getElementById('sendCommentBtn');
 const commentsList = document.getElementById('commentsList');
+const activityList = document.getElementById('activityList');
 
 const newCardModal = document.getElementById('newCardModal');
 const closeNewCardModalBtn = document.getElementById('closeNewCardModalBtn');
@@ -264,14 +265,16 @@ function renderBoardLabelsOptions(){
 /************** DETAIL PANEL **************/
 async function openCardDetail(cardId){
   showDetailPanel();
+  activateDetailTab('activity');
 
   detailContextEl.textContent = 'Carregando card...';
   detailTitle.value = '';
   detailDesc.value = '';
   attachmentsList.innerHTML = '';
   commentsList.innerHTML = '';
+  if(activityList) activityList.innerHTML = '<div class="activity-loading">Carregando histórico...</div>';
 
-  const [card, attachments, comments] = await Promise.all([
+  const [card, attachments, actions] = await Promise.all([
     fetch(TRELLO(`cards/${cardId}`, {
       fields:'name,desc,idMembers,idLabels,shortUrl,dateLastActivity,idBoard,idList'
     })).then(r=>r.json()),
@@ -279,8 +282,9 @@ async function openCardDetail(cardId){
       fields:'name,url,date'
     })).then(r=>r.json()),
     fetch(TRELLO(`cards/${cardId}/actions`, {
-      filter:'commentCard',
-      fields:'data,date,memberCreator'
+      filter:'all',
+      fields:'data,date,memberCreator,type',
+      limit:100
     })).then(r=>r.json())
   ]);
 
@@ -295,7 +299,8 @@ async function openCardDetail(cardId){
   setMultiSelectValues(detailLabels, card.idLabels || []);
 
   renderAttachments(attachments);
-  renderComments(comments);
+  renderComments(actions.filter(a => a.type === 'commentCard'));
+  renderActivity(actions);
 }
 
 function renderAttachments(attachments){
@@ -335,6 +340,62 @@ function renderComments(comments){
     commentsList.appendChild(row);
   });
 }
+
+
+function activityDescription(action){
+  const d = action.data || {};
+  const old = d.old || {};
+  const card = d.card || {};
+  const listBefore = d.listBefore?.name;
+  const listAfter = d.listAfter?.name;
+  const boardBefore = d.boardBefore?.name;
+  const boardAfter = d.boardAfter?.name;
+
+  if(action.type === 'updateCard'){
+    if(listBefore && listAfter) return {icon:'↔', title:'Moveu a demanda de lista', detail:`${listBefore} → ${listAfter}`, kind:'move'};
+    if(boardBefore && boardAfter) return {icon:'⇄', title:'Moveu a demanda de quadro', detail:`${boardBefore} → ${boardAfter}`, kind:'move'};
+    if(old.idList && d.list?.name) return {icon:'↔', title:'Moveu a demanda', detail:`Nova lista: ${d.list.name}`, kind:'move'};
+    if(Object.prototype.hasOwnProperty.call(old,'name')) return {icon:'✎', title:'Alterou o nome da demanda', detail: old.name ? `Antes: ${old.name}` : '', kind:'edit'};
+    if(Object.prototype.hasOwnProperty.call(old,'desc')) return {icon:'≡', title:'Alterou a descrição', detail:'', kind:'edit'};
+    if(Object.prototype.hasOwnProperty.call(old,'closed')) return {icon: card.closed ? '✓' : '↻', title: card.closed ? 'Arquivou a demanda' : 'Reabriu a demanda', detail:'', kind:'state'};
+    if(Object.prototype.hasOwnProperty.call(old,'due')) return {icon:'◷', title:'Alterou o prazo', detail: card.due ? `Novo prazo: ${fmtDate(card.due)}` : 'Prazo removido', kind:'edit'};
+    return {icon:'✎', title:'Atualizou a demanda', detail:'', kind:'edit'};
+  }
+  if(action.type === 'createCard') return {icon:'+', title:'Criou a demanda', detail:d.list?.name ? `Lista: ${d.list.name}` : '', kind:'create'};
+  if(action.type === 'copyCard') return {icon:'⧉', title:'Copiou a demanda', detail:'', kind:'create'};
+  if(action.type === 'addMemberToCard') return {icon:'+', title:'Adicionou um responsável', detail:d.member?.name || '', kind:'member'};
+  if(action.type === 'removeMemberFromCard') return {icon:'−', title:'Removeu um responsável', detail:d.member?.name || '', kind:'member'};
+  if(action.type === 'addLabelToCard') return {icon:'●', title:'Adicionou uma etiqueta', detail:d.label?.name || d.label?.color || '', kind:'label'};
+  if(action.type === 'removeLabelFromCard') return {icon:'○', title:'Removeu uma etiqueta', detail:d.label?.name || d.label?.color || '', kind:'label'};
+  if(action.type === 'addAttachmentToCard') return {icon:'⌕', title:'Adicionou um anexo', detail:d.attachment?.name || '', kind:'attachment'};
+  if(action.type === 'deleteAttachmentFromCard') return {icon:'×', title:'Removeu um anexo', detail:d.attachment?.name || '', kind:'attachment'};
+  if(action.type === 'commentCard') return {icon:'☵', title:'Comentou na demanda', detail:d.text || '', kind:'comment'};
+  return null;
+}
+
+function renderActivity(actions){
+  if(!activityList) return;
+  clearEl(activityList);
+  const visible = (actions || []).map(a => ({action:a, info:activityDescription(a)})).filter(x => x.info);
+  if(!visible.length){
+    activityList.innerHTML = '<div class="activity-empty">Nenhuma atualização encontrada para esta demanda.</div>';
+    return;
+  }
+  visible.forEach(({action,info})=>{
+    const item=document.createElement('div');
+    item.className=`activity-item activity-${info.kind || 'default'}`;
+    const who=action.memberCreator?.fullName || action.memberCreator?.username || 'Alguém';
+    item.innerHTML=`<div class="activity-marker">${escapeHtml(info.icon)}</div><div class="activity-content"><div class="activity-title">${escapeHtml(info.title)}</div>${info.detail ? `<div class="activity-detail">${escapeHtml(info.detail)}</div>` : ''}<div class="activity-meta">${escapeHtml(who)} • ${fmtDate(action.date)}</div></div>`;
+    activityList.appendChild(item);
+  });
+}
+
+function activateDetailTab(name){
+  document.querySelectorAll('.detail-tab').forEach(b=>b.classList.toggle('active', b.dataset.detailTab===name));
+  document.querySelectorAll('.detail-tab-panel').forEach(p=>p.classList.toggle('active', p.id===`tab-${name}`));
+}
+
+document.querySelectorAll('.detail-tab').forEach(btn=>btn.addEventListener('click',()=>activateDetailTab(btn.dataset.detailTab)));
 
 /************** SAVE CARD **************/
 saveCardBtn.addEventListener('click', async ()=>{

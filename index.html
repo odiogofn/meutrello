@@ -57,8 +57,14 @@
         <div class="form-grid"><div class="field"><label>Responsáveis</label><select id="detailMembers" multiple></select><small>Ctrl/Cmd para selecionar vários</small></div><div class="field"><label>Etiquetas</label><select id="detailLabels" multiple></select><small>Ctrl/Cmd para selecionar várias</small></div></div>
         <div class="drawer-actions"><button id="saveCardBtn" class="btn primary">Salvar alterações</button><button id="moveCardBtn" class="btn">Mover</button><button id="deleteCardBtn" class="btn danger">Excluir</button><a id="openTrelloLink" class="btn link" href="#" target="_blank" rel="noopener">Abrir no Trello ↗</a></div>
         <div class="divider"></div>
-        <section class="detail-section"><div class="section-title"><h3>Anexos</h3></div><div class="upload-row"><input id="detailAttachInput" type="file" multiple /><button id="uploadAttachmentsBtn" class="btn">Enviar</button></div><div id="attachmentsList" class="stack-list"></div></section>
-        <section class="detail-section"><div class="section-title"><h3>Comentários</h3></div><textarea id="newCommentText" rows="3" placeholder="Escreva um comentário..."></textarea><button id="sendCommentBtn" class="btn primary compact">Comentar</button><div id="commentsList" class="stack-list"></div></section>
+        <div class="detail-tabs" role="tablist">
+          <button class="detail-tab active" data-detail-tab="activity">Atividade</button>
+          <button class="detail-tab" data-detail-tab="comments">Comentários</button>
+          <button class="detail-tab" data-detail-tab="attachments">Anexos</button>
+        </div>
+        <section id="tab-activity" class="detail-tab-panel active"><div class="section-title"><h3>Histórico da demanda</h3><span class="section-hint">Movimentações e alterações registradas pelo Trello</span></div><div id="activityList" class="activity-timeline"></div></section>
+        <section id="tab-comments" class="detail-tab-panel"><div class="section-title"><h3>Comentários</h3></div><textarea id="newCommentText" rows="3" placeholder="Escreva um comentário..."></textarea><button id="sendCommentBtn" class="btn primary compact">Comentar</button><div id="commentsList" class="stack-list"></div></section>
+        <section id="tab-attachments" class="detail-tab-panel"><div class="section-title"><h3>Anexos</h3></div><div class="upload-row"><input id="detailAttachInput" type="file" multiple /><button id="uploadAttachmentsBtn" class="btn">Enviar</button></div><div id="attachmentsList" class="stack-list"></div></section>
       </div>
     </div>
   </aside>
