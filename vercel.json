@@ -1,0 +1,1 @@
+{"version":2,"rewrites":[{"source":"/api/state","destination":"/api/state"},{"source":"/api/stream","destination":"/api/stream"},{"source":"/(.*)","destination":"/public/$1"}]}

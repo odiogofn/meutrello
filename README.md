@@ -1,34 +1,17 @@
-# MeuTrello Monitor
+# MeuTrello Monitor — Vercel
 
-Painel independente de auditoria de cartões. Node.js 20+ sem dependências externas.
+## Publicação
+1. Envie **o conteúdo desta pasta** para um repositório GitHub, mantendo `api/`, `public/`, `vercel.json` e `package.json` na raiz.
+2. No Vercel, importe o repositório. **Framework Preset: Other**. **Root Directory:** raiz do projeto. **Output Directory:** deixe vazio (não configure `public`).
+3. Em Settings → Environment Variables, crie `TRELLO_KEY` e `TRELLO_TOKEN`, com valores do Trello. Marque Production e Preview se necessário.
+4. Faça **Redeploy** após adicionar as variáveis. Abra `/api/state` para conferir se retorna JSON e depois a página inicial.
 
-## Iniciar
+## Funcionamento
+A função serverless `/api/state` consulta ações recentes dos quadros acessíveis ao token; o navegador atualiza a cada **15 segundos**, enquanto a aba estiver aberta. Eventos já vistos ficam guardados no `localStorage` **somente daquele navegador**, até 2.000 registros. Não há processo contínuo no servidor, nem SSE; `/api/stream` devolve aviso HTTP 410.
 
-Configure as variáveis `TRELLO_KEY` e `TRELLO_TOKEN` no ambiente do servidor. No macOS/Linux:
-
-```bash
-export TRELLO_KEY="SUA_CHAVE"
-export TRELLO_TOKEN="SEU_TOKEN"
-npm start
-```
-
-No Windows PowerShell:
-
-```powershell
-$env:TRELLO_KEY="SUA_CHAVE"
-$env:TRELLO_TOKEN="SEU_TOKEN"
-npm start
-```
-
-Abra http://localhost:3000
-
-## Funcionamento e limites
-
-- Consulta ações recentes de cada quadro acessível a cada 10 segundos (configurável via `POLL_MS`, mínimo 5 segundos). Distribui novos eventos aos navegadores conectados por Server-Sent Events (SSE).
-- **Não é push instantâneo do Trello**: há atraso de até um ciclo de consulta, mais latência da API. Para push real, é necessário implementar webhooks públicos com HTTPS.
-- Na primeira execução, mostra ações recentes; depois persiste até 1.500 eventos em `data/events.json`. Use disco persistente na hospedagem; ambientes serverless não servem para este processo contínuo.
-- Cada quadro retorna até 100 ações por consulta. Em quadros de atividade muito intensa, eventos podem ser perdidos entre consultas. Limites de taxa da API também se aplicam.
-- Criação, movimentação, arquivamento, restauração, exclusão e comentários são tratados quando retornados pelo Trello. **Reações não são garantidas**: a API de ações consultada pode não expor os eventos de reação. Exclusões podem não trazer o nome ou link de um cartão já apagado.
-- Algumas transferências entre quadros podem aparecer com informações incompletas de origem/destino, conforme o payload retornado pela API.
-- Tokens devem ficar exclusivamente no servidor. O projeto antigo incluía token no JS público: revogue-o e crie um novo.
-- Este projeto não tem autenticação de visitantes. Restrinja o acesso ao painel se o hospedar na internet, pois os eventos podem conter informações privadas.
+## Limitações importantes
+- Não é tempo real instantâneo. Em Vercel, para notificações por webhook mesmo com a página fechada, é preciso um banco persistente (ex.: Supabase) e endpoint público de webhook, com verificação e controle de acesso.
+- A API não garante que exclusões definitivas e reações estejam disponíveis em todas as ações. O monitor não inventa esses eventos.
+- A cada consulta são recuperadas até 100 ações por quadro, ou `ACTIONS_PER_BOARD` (máximo 100). Se houver muitas ações entre consultas, pode haver lacunas.
+- O endpoint atualmente usa o token do servidor para servir dados ao navegador **sem autenticação de usuários**. Configure proteção de acesso no Vercel antes de publicar para terceiros; o token nunca é enviado ao cliente, mas o histórico é sensível.
+- `localStorage` não sincroniza entre dispositivos e não substitui banco de dados.

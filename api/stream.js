@@ -1,0 +1,1 @@
+export default function handler(req,res){res.setHeader('Cache-Control','no-store');return res.status(410).json({error:'Vercel não mantém conexões SSE permanentes. Use /api/state com polling no navegador a cada 15 segundos.'})}
