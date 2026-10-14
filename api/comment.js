@@ -9,8 +9,9 @@ export default async function handler(req,res){
  if(a.length!==b.length||!timingSafeEqual(a,b))return res.status(401).json({error:'Senha de publicação incorreta.'});
  const key=process.env.TRELLO_KEY,token=process.env.TRELLO_TOKEN;
  if(!key||!token)return res.status(503).json({error:'Credenciais Trello ausentes.'});
- const {cardId,text}=req.body||{};
- if(typeof cardId!=='string'||!/^[a-f\d]{24}$/i.test(cardId)||typeof text!=='string'||!text.trim()||text.length>12000)return res.status(400).json({error:'Dados inválidos.'});
+ const {text}=req.body||{};
+ const cardId=req.body?.cardId||((req.body?.cardUrl||'').match(/\/c\/([A-Za-z0-9]{8,24})(?:[/?#]|$)/i)||[])[1]||'';
+ if(typeof cardId!=='string'||!/^(?:[a-f\d]{24}|[A-Za-z0-9]{8})$/i.test(cardId)||typeof text!=='string'||!text.trim()||text.length>12000)return res.status(400).json({error:'Dados inválidos.'});
  try{
   const url=new URL('https://api.trello.com/1/cards/'+cardId+'/actions/comments');
   url.searchParams.set('key',key);url.searchParams.set('token',token);
