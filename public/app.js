@@ -1,6 +1,6 @@
 let events=[],boards=[];const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const icons={create:'+',transfer:'⇄',move:'↪',archive:'▣',restore:'↩',delete:'×',comment:'✎',reaction:'♥'};const date=s=>new Date(s).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'medium'});
-function render(){const q=$('search').value.toLowerCase(),board=$('boardFilter').value,type=$('typeFilter').value;const list=events.filter(e=>(!board||e.boardId===board)&&(!type||e.type===type)&&(!q||[e.actor,e.card,e.board,e.from,e.to,e.comment].join(' ').toLowerCase().includes(q)));$('total').textContent=events.length;$('transfers').textContent=events.filter(e=>e.type==='transfer').length;$('archives').textContent=events.filter(e=>e.type==='archive').length;
-$('feed').innerHTML=list.length?list.slice(0,500).map(e=>{let sentence=`<b>${esc(e.actor)}</b> ${esc(e.detail)} <b>${esc(e.card)}</b>`;if(e.type==='transfer')sentence+=` do quadro <b>${esc(e.from)}</b> para <b>${esc(e.to)}</b>`;else if(e.type==='move')sentence+=` de <b>${esc(e.from)}</b> para <b>${esc(e.to)}</b>`;else sentence+=` no quadro <b>${esc(e.board)}</b>`;return `<div class="event ${esc(e.type)}"><div class="dot">${icons[e.type]||'•'}</div><div class="content"><div class="sentence">${sentence}</div><div class="meta">${date(e.date)}</div>${e.comment?`<div class="quote">${esc(e.comment)}</div>`:''}<div class="links">${e.cardUrl?`<a href="${esc(e.cardUrl)}" target="_blank" rel="noopener">Abrir cartão ↗</a>`:''}${e.boardUrl?`<a href="${esc(e.boardUrl)}" target="_blank" rel="noopener">Abrir quadro ↗</a>`:''}</div></div></div>`}).join(''):'<div class="empty">Nenhuma atividade encontrada.</div>'}
+function render(){const q=$('search').value.toLowerCase(),board=$('boardFilter').value,type=$('typeFilter').value;const list=events.filter(e=>(!board||e.boardId===board)&&(!type||e.type===type)&&(!q||[e.actor,e.card,e.board,e.from,e.to,e.comment,...(e.labels||[]).map(l=>l.name)].join(' ').toLowerCase().includes(q)));$('total').textContent=events.length;$('transfers').textContent=events.filter(e=>e.type==='transfer').length;$('archives').textContent=events.filter(e=>e.type==='archive').length;
+$('feed').innerHTML=list.length?list.slice(0,500).map(e=>{let sentence=`<b>${esc(e.actor)}</b> ${esc(e.detail)} <b>${esc(e.card)}</b>`;if(e.type==='transfer')sentence+=` do quadro <b>${esc(e.from)}</b> para <b>${esc(e.to)}</b>`;else if(e.type==='move')sentence+=` de <b>${esc(e.from)}</b> para <b>${esc(e.to)}</b>`;else sentence+=` no quadro <b>${esc(e.board)}</b>`;return `<div class="event ${esc(e.type)}"><div class="dot">${icons[e.type]||'•'}</div><div class="content"><div class="sentence">${sentence}</div><div class="meta">${date(e.date)}</div>${e.labels?.length?`<div class="event-labels"><span>Etiquetas atuais:</span>${e.labels.map(l=>`<span class="event-label">${esc(l.name||l.color||"Sem nome")}</span>`).join("")}</div>`:""}${e.comment?`<div class="quote">${esc(e.comment)}</div>`:""}${e.type==="comment"&&e.cardId?`<button type="button" class="reply-trigger" data-event="${esc(e.id)}">↩ Responder</button>`:""}<div class="links">${e.cardUrl?`<a href="${esc(e.cardUrl)}" target="_blank" rel="noopener">Abrir cartão ↗</a>`:''}${e.boardUrl?`<a href="${esc(e.boardUrl)}" target="_blank" rel="noopener">Abrir quadro ↗</a>`:''}</div></div></div>`}).join(''):'<div class="empty">Nenhuma atividade encontrada.</div>'}
 function updateBoards(b){boards=b;const current=$('boardFilter').value;$('boardFilter').innerHTML='<option value="">Todos os quadros</option>'+b.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');$('boardFilter').value=current;$('boards').innerHTML=b.map(x=>`<a class="board" href="${esc(x.url)}" target="_blank" rel="noopener">▦ &nbsp;${esc(x.name)}</a>`).join('')}
 function status(s){$('status').textContent=s.error?'Erro de conexão':(autoEnabled?'Monitorando automaticamente':'Atualização pausada');if(s.lastSync){$('updated').textContent=new Date(s.lastSync).toLocaleTimeString('pt-BR');$('lastSyncLabel').textContent='Última atualização: '+new Date(s.lastSync).toLocaleTimeString('pt-BR');}if(s.boards)updateBoards(s.boards);if(s.error)console.warn(s.error)}
 const STORAGE_KEY='meutrello-monitor-vercel-events-v1';const AUTO_KEY='meutrello-monitor-auto-v1';const INTERVAL_MS=30000;let autoEnabled=localStorage.getItem(AUTO_KEY)!=='false';let busy=false;let latestSync='';let nextPollAt=Date.now();
@@ -16,3 +16,23 @@ document.addEventListener('click',e=>{if(!e.target.closest('.board-menu')){$('bo
 render();renderSyncControls();if(autoEnabled)poll();
 setInterval(()=>{if(autoEnabled&&!document.hidden&&!busy&&Date.now()>=nextPollAt)poll();renderSyncControls()},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&autoEnabled){nextPollAt=Date.now();poll()}renderSyncControls()});
+
+let selectedReply=null;
+$('feed').addEventListener('click',e=>{
+ const btn=e.target.closest('.reply-trigger');if(!btn)return;
+ const item=events.find(x=>x.id===btn.dataset.event);if(!item)return;
+ selectedReply=item;$('replyContext').textContent=`${item.actor} comentou em "${item.card}": ${item.comment||''}`;
+ $('replyText').value='';$('replyError').textContent='';$('replyDialog').showModal();
+});
+$('cancelReply').addEventListener('click',()=>$('replyDialog').close());
+$('replyForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(!selectedReply)return;
+ const send=$('sendReply');send.disabled=true;send.textContent='Publicando...';$('replyError').textContent='';
+ try{
+  const text=`Em resposta a ${selectedReply.actor}:\n${$('replyText').value.trim()}`;
+  const r=await fetch('/api/comment',{method:'POST',headers:{'Content-Type':'application/json','X-Monitor-Password':$('replyPassword').value},body:JSON.stringify({cardId:selectedReply.cardId,text})});
+  const result=await r.json();if(!r.ok)throw Error(result.error||'Não foi possível publicar.');
+  $('replyPassword').value='';$('replyDialog').close();await poll(true);
+ }catch(err){$('replyError').textContent=err.message}
+ finally{send.disabled=false;send.textContent='Publicar resposta'}
+});

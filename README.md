@@ -22,3 +22,10 @@ A função serverless `/api/state` consulta ações recentes dos quadros acessí
 - Botão Pausar/Retomar: mantém a preferência neste navegador e impede consultas automáticas quando pausado.
 - Botão Atualizar agora: consulta manualmente mesmo quando pausado.
 - Intervalo configurado em `public/app.js`, constante `INTERVAL_MS=30000`.
+
+## Versão 2.3
+- Mostra **etiquetas atuais** para os 10 cartões criados mais recentemente retornados pela consulta (não é possível garantir que sejam as mesmas etiquetas do instante da criação).
+- Botão **Responder** nos eventos de comentário: publica novo comentário no mesmo cartão usando a conta do token Trello.
+- No Vercel, adicione também `MONITOR_WRITE_PASSWORD` (senha longa e exclusiva) em Settings > Environment Variables, e faça Redeploy. O botão solicita essa senha a cada resposta; ela não fica salva no navegador.
+- **Segurança:** esta senha simples é uma proteção básica para a rota de escrita, não substitui autenticação individual nem controle de usuários. Recomenda-se proteger também o acesso ao painel e à API de leitura.
+- A leitura de etiquetas acrescenta até 10 consultas por ciclo, podendo aumentar o uso da API.

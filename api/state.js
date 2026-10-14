@@ -15,6 +15,8 @@ else if(old.closed===false&&c.closed===true){type='archive';detail='arquivou o c
 else if(old.closed===true&&c.closed===false){type='restore';detail='restaurou o cartão'}else continue
 }else continue;
 const cardUrl=c.shortLink?'https://trello.com/c/'+encodeURIComponent(c.shortLink):c.id?'https://trello.com/c/'+encodeURIComponent(c.id):null;
-events.push({id:a.id,date:a.date,type,detail,actor:a.memberCreator?.fullName||a.memberCreator?.username||'Usuário',card:c.name||'Cartão',cardUrl,board:names.get(boardId)||d.board?.name||'Quadro não identificado',boardId,boardUrl:boards.find(b=>b.id===boardId)?.url|| (boardId?'https://trello.com/b/'+encodeURIComponent(boardId):null),from,to,comment:type==='comment'?d.text||'':''})}
-events.sort((a,b)=>b.date.localeCompare(a.date));return res.status(200).json({events,boards:active.map(b=>({id:b.id,name:b.name,url:b.url})),lastSync:new Date().toISOString(),interval:15000,error:failed?`Não foi possível consultar ${failed} quadro(s).`:''})
+events.push({id:a.id,date:a.date,type,detail,actor:a.memberCreator?.fullName||a.memberCreator?.username||'Usuário',card:c.name||'Cartão',cardUrl,board:names.get(boardId)||d.board?.name||'Quadro não identificado',boardId,boardUrl:boards.find(b=>b.id===boardId)?.url|| (boardId?'https://trello.com/b/'+encodeURIComponent(boardId):null),from,to,cardId:c.id||'',labels:[],comment:type==='comment'?d.text||'':''})}
+const created=events.filter(e=>e.type==='create'&&e.cardId).slice(0,10);
+await Promise.allSettled(created.map(async e=>{try{const c=await get('/cards/'+e.cardId+'?fields=id,labels',key,token);e.labels=(c.labels||[]).map(l=>({name:l.name||'',color:l.color||''}));}catch{}}));
+events.sort((a,b)=>b.date.localeCompare(a.date));return res.status(200).json({events,boards:active.map(b=>({id:b.id,name:b.name,url:b.url})),lastSync:new Date().toISOString(),interval:30000,error:failed?`Não foi possível consultar ${failed} quadro(s).`:''})
 }catch(e){return res.status(502).json({error:e.message||'Erro na consulta ao Trello'})}}
