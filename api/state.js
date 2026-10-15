@@ -16,7 +16,9 @@ else if(old.closed===true&&c.closed===false){type='restore';detail='restaurou o 
 }else continue;
 const cardUrl=c.shortLink?'https://trello.com/c/'+encodeURIComponent(c.shortLink):c.id?'https://trello.com/c/'+encodeURIComponent(c.id):null;
 events.push({id:a.id,date:a.date,type,detail,actor:a.memberCreator?.fullName||a.memberCreator?.username||'Usuário',card:c.name||'Cartão',cardUrl,board:names.get(boardId)||d.board?.name||'Quadro não identificado',boardId,boardUrl:boards.find(b=>b.id===boardId)?.url|| (boardId?'https://trello.com/b/'+encodeURIComponent(boardId):null),from,to,cardId:c.id||'',labels:[],comment:type==='comment'?d.text||'':''})}
-const created=events.filter(e=>e.type==='create'&&e.cardId).slice(0,10);
-await Promise.allSettled(created.map(async e=>{try{const c=await get('/cards/'+e.cardId+'?fields=id,labels',key,token);e.labels=(c.labels||[]).map(l=>({name:l.name||'',color:l.color||''}));}catch{}}));
+const ids=[...new Set(events.map(e=>e.cardId).filter(Boolean))];
+const resultsLabels=await Promise.allSettled(ids.map(async id=>{const card=await get('/cards/'+encodeURIComponent(id)+'?fields=labels',key,token);return [id,(card.labels||[]).map(l=>({name:l.name||'',color:l.color||''}))]}));
+const labelsByCard=new Map(resultsLabels.filter(r=>r.status==='fulfilled').map(r=>r.value));
+for(const e of events){e.labels=labelsByCard.get(e.cardId)||[];e.labelsLoaded=labelsByCard.has(e.cardId)}
 events.sort((a,b)=>b.date.localeCompare(a.date));return res.status(200).json({events,boards:active.map(b=>({id:b.id,name:b.name,url:b.url})),lastSync:new Date().toISOString(),interval:30000,error:failed?`Não foi possível consultar ${failed} quadro(s).`:''})
 }catch(e){return res.status(502).json({error:e.message||'Erro na consulta ao Trello'})}}
