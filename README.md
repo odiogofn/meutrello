@@ -29,3 +29,14 @@ A função serverless `/api/state` consulta ações recentes dos quadros acessí
 - No Vercel, adicione também `MONITOR_WRITE_PASSWORD` (senha longa e exclusiva) em Settings > Environment Variables, e faça Redeploy. O botão solicita essa senha a cada resposta; ela não fica salva no navegador.
 - **Segurança:** esta senha simples é uma proteção básica para a rota de escrita, não substitui autenticação individual nem controle de usuários. Recomenda-se proteger também o acesso ao painel e à API de leitura.
 - A leitura de etiquetas acrescenta até 10 consultas por ciclo, podendo aumentar o uso da API.
+
+## Versão 2.4
+Exibe etiquetas atuais em todos os tipos de evento, quando o cartão ainda pode ser consultado. Cartões sem etiquetas mostram Sem etiquetas. Consultas por cartão único aumentam chamadas à API; cache compartilhado é recomendado para muitos cartões.
+
+## MeuTrello Monitor 2.5 — filtro por etiquetas
+- Novo filtro **Todas as etiquetas**, na barra superior do feed, ao lado dos filtros de quadro e tipo.
+- Lista de opções gerada dinamicamente a partir das etiquetas atuais dos cartões retornados pelo Trello e presentes no histórico local.
+- O filtro combina com pesquisa, quadro e tipo de evento; selecione **Todas as etiquetas** para limpar.
+- O filtro usa o nome da etiqueta (ou cor, caso não tenha nome). Etiquetas homônimas em quadros diferentes aparecem como uma opção.
+- Eventos de cartões inacessíveis ou excluídos podem não conter etiquetas para filtrar.
+- Mantidos atualização de 30 segundos, pausa/retomada, comentários e menu superior.
